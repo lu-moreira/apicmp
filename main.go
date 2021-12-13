@@ -94,6 +94,10 @@ func main() {
 						Name:  "jq",
 						Usage: ".members | [] | .id",
 					},
+					&cli.StringFlag{
+						Name:  "postmanpass",
+						Usage: "~/Downloads/collection.json",
+					},
 				},
 				Before: func(c *cli.Context) error {
 					if c.String("before") == "" {
@@ -128,20 +132,21 @@ func main() {
 					}
 
 					return diff.Cmp(ctx, diff.Config{
-						BeforeBasePath:     c.String("before"),
-						AfterBasePath:      c.String("after"),
-						FixtureFilePath:    c.String("file"),
-						Headers:            c.StringSlice("header"),
-						QueryStrings:       c.StringSlice("querystring"),
-						IgnoreQueryStrings: ignoreQuerystring,
-						IgnoreFields:       diff.Atoam(c.String("ignore")),
-						Rows:               diff.Atoim(c.String("rows")),
-						Retry:              diff.Atoim(c.String("retry")),
-						Match:              c.String("match"),
-						LogLevel:           c.String("loglevel"),
-						Threads:            c.Int("threads"),
-						PostmanFilePath:    c.String("postman"),
-						Jq:                 c.String("jq"),
+						BeforeBasePath:      c.String("before"),
+						AfterBasePath:       c.String("after"),
+						FixtureFilePath:     c.String("file"),
+						Headers:             c.StringSlice("header"),
+						QueryStrings:        c.StringSlice("querystring"),
+						IgnoreQueryStrings:  ignoreQuerystring,
+						IgnoreFields:        diff.Atoam(c.String("ignore")),
+						Rows:                diff.Atoim(c.String("rows")),
+						Retry:               diff.Atoim(c.String("retry")),
+						Match:               c.String("match"),
+						LogLevel:            c.String("loglevel"),
+						Threads:             c.Int("threads"),
+						PostmanFilePath:     c.String("postman"),
+						Jq:                  c.String("jq"),
+						PostmanPassFilePath: c.String("postmanpass"),
 					})
 				},
 			},
