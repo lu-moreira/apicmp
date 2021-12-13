@@ -3,9 +3,13 @@ package diff
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/http/httputil"
+	"runtime"
+	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
 	log "github.com/sirupsen/logrus"
@@ -16,10 +20,37 @@ type httpClient interface {
 }
 
 func newRetriableHTTPClient(retry map[int]struct{}) httpClient {
-	c := retryablehttp.NewClient()
-	c.Logger = nil
-	c.RetryMax = 1
-	c.CheckRetry = newRetryPolicy(retry)
+	// default pooled client
+	transport := &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		MaxIdleConnsPerHost:   runtime.GOMAXPROCS(0) + 1,
+		TLSClientConfig:       &tls.Config{InsecureSkipVerify: true},
+	}
+
+	var defaultRetryWaitMin = 1 * time.Second
+	var defaultRetryWaitMax = 30 * time.Second
+
+	c := &retryablehttp.Client{
+		HTTPClient: &http.Client{
+			Transport: transport,
+			Timeout:   5 * time.Minute,
+		},
+		Logger:       nil,
+		RetryWaitMin: defaultRetryWaitMin,
+		RetryWaitMax: defaultRetryWaitMax,
+		RetryMax:     1,
+		CheckRetry:   newRetryPolicy(retry),
+		Backoff:      retryablehttp.DefaultBackoff,
+	}
 	return c
 }
 

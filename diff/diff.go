@@ -28,20 +28,21 @@ type Summary struct {
 }
 
 type Config struct {
-	BeforeBasePath     string
-	AfterBasePath      string
-	FixtureFilePath    string
-	Headers            []string
-	QueryStrings       []string
-	IgnoreQueryStrings *regexp.Regexp // regex to remove matched query strings
-	IgnoreFields       map[string]struct{}
-	Rows               map[int]struct{}
-	Retry              map[int]struct{}
-	Match              string
-	LogLevel           string
-	Threads            int
-	PostmanFilePath    string
-	Jq                 string
+	BeforeBasePath      string
+	AfterBasePath       string
+	FixtureFilePath     string
+	Headers             []string
+	QueryStrings        []string
+	IgnoreQueryStrings  *regexp.Regexp // regex to remove matched query strings
+	IgnoreFields        map[string]struct{}
+	Rows                map[int]struct{}
+	Retry               map[int]struct{}
+	Match               string
+	LogLevel            string
+	Threads             int
+	PostmanFilePath     string
+	Jq                  string
+	PostmanPassFilePath string
 }
 
 // Cmp will compare the before and after
@@ -82,6 +83,7 @@ func Cmp(ctx context.Context, c Config) error {
 	}
 
 	collection := make([]test, 0)
+	collectionPass := make([]test, 0)
 
 	// compute results
 	sum := Summary{
@@ -109,12 +111,21 @@ func Cmp(ctx context.Context, c Config) error {
 			fmt.Printf("\n\n")
 		} else {
 			sum.Passed++
+			collectionPass = append(collectionPass, r.e)
 		}
 	}
 
 	if c.PostmanFilePath != "" {
 		postman := PostmanV2{}
 		err = postman.GenerateCollection(c.PostmanFilePath, collection)
+		if err != nil {
+			return fmt.Errorf("postman collection: %w", err)
+		}
+	}
+
+	if c.PostmanPassFilePath != "" {
+		postman := PostmanV2{}
+		err = postman.GenerateCollection(c.PostmanPassFilePath, collectionPass)
 		if err != nil {
 			return fmt.Errorf("postman collection: %w", err)
 		}
